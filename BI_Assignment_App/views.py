@@ -7,7 +7,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve, auc
 from wordcloud import WordCloud
-from imblearn.over_sampling import SMOTE
+# from imblearn.over_sampling import SMOTE
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -40,81 +40,81 @@ def load_data(query):
 
 from collections import Counter
 
-def generate_charts(request):
-    # LDA Word Cloud Data
-    products = load_data("SELECT productdescription FROM products")
-    text_data = " ".join(products['productdescription'].dropna().tolist())
-    word_frequencies = Counter(text_data.split())
-    wordcloud_data = [{"word": word, "weight": count} for word, count in word_frequencies.items() if count > 2]
+# def generate_charts(request):
+#     # LDA Word Cloud Data
+#     products = load_data("SELECT productdescription FROM products")
+#     text_data = " ".join(products['productdescription'].dropna().tolist())
+#     word_frequencies = Counter(text_data.split())
+#     wordcloud_data = [{"word": word, "weight": count} for word, count in word_frequencies.items() if count > 2]
 
-    # Load Data
-    customers = load_data("SELECT customernumber, creditlimit FROM customers")
-    payments = load_data("SELECT customernumber, SUM(amount) AS total_payments FROM payments GROUP BY customernumber")
-    clv_data = pd.merge(customers, payments, on="customernumber", how="left").fillna(0)
-    clv_data["creditlimit"] = clv_data["creditlimit"].astype(float)
-    clv_data["total_payments"] = clv_data["total_payments"].astype(float)
+#     # Load Data
+#     customers = load_data("SELECT customernumber, creditlimit FROM customers")
+#     payments = load_data("SELECT customernumber, SUM(amount) AS total_payments FROM payments GROUP BY customernumber")
+#     clv_data = pd.merge(customers, payments, on="customernumber", how="left").fillna(0)
+#     clv_data["creditlimit"] = clv_data["creditlimit"].astype(float)
+#     clv_data["total_payments"] = clv_data["total_payments"].astype(float)
 
-    # K-Means Clustering
-    kmeans = KMeans(n_clusters=3, random_state=42)
-    clv_data["Cluster"] = kmeans.fit_predict(clv_data[["creditlimit", "total_payments"]])
+#     # K-Means Clustering
+#     kmeans = KMeans(n_clusters=3, random_state=42)
+#     clv_data["Cluster"] = kmeans.fit_predict(clv_data[["creditlimit", "total_payments"]])
 
-    # Plot the clusters
-    plt.figure(figsize=(8, 6))
-    for cluster in clv_data["Cluster"].unique():
-        cluster_data = clv_data[clv_data["Cluster"] == cluster]
-        plt.scatter(cluster_data["creditlimit"], cluster_data["total_payments"], label=f"Cluster {cluster}")
-    plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], c="red", marker="X", s=200, label="Centroids")
-    plt.xlabel("Credit Limit")
-    plt.ylabel("Total Payments")
-    plt.title("K-Means Clustering")
-    plt.legend()
+#     # Plot the clusters
+#     plt.figure(figsize=(8, 6))
+#     for cluster in clv_data["Cluster"].unique():
+#         cluster_data = clv_data[clv_data["Cluster"] == cluster]
+#         plt.scatter(cluster_data["creditlimit"], cluster_data["total_payments"], label=f"Cluster {cluster}")
+#     plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], c="red", marker="X", s=200, label="Centroids")
+#     plt.xlabel("Credit Limit")
+#     plt.ylabel("Total Payments")
+#     plt.title("K-Means Clustering")
+#     plt.legend()
 
-    # Save the plot to a Base64 string
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight")
-    buf.seek(0)
-    image_base64 = base64.b64encode(buf.read()).decode("utf-8")
-    buf.close()
+#     # Save the plot to a Base64 string
+#     buf = io.BytesIO()
+#     plt.savefig(buf, format="png", bbox_inches="tight")
+#     buf.seek(0)
+#     image_base64 = base64.b64encode(buf.read()).decode("utf-8")
+#     buf.close()
 
-    # Logistic Regression for Price Optimization
-    order_details = load_data("SELECT quantityordered, priceeach FROM orderdetails")
-    order_details['high_volume_purchase'] = (
-        order_details['quantityordered'] > order_details['quantityordered'].median()
-    ).astype(int)
+#     # Logistic Regression for Price Optimization
+#     order_details = load_data("SELECT quantityordered, priceeach FROM orderdetails")
+#     order_details['high_volume_purchase'] = (
+#         order_details['quantityordered'] > order_details['quantityordered'].median()
+#     ).astype(int)
 
-    X = order_details[["priceeach", "quantityordered"]]
-    y = order_details["high_volume_purchase"]
+#     X = order_details[["priceeach", "quantityordered"]]
+#     y = order_details["high_volume_purchase"]
 
-    if len(y.unique()) > 1:  # Proceed only if there are at least two classes
-        # Split the data
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
-        )
+#     if len(y.unique()) > 1:  # Proceed only if there are at least two classes
+#         # Split the data
+#         X_train, X_test, y_train, y_test = train_test_split(
+#             X, y, test_size=0.2, random_state=42, stratify=y
+#         )
 
-        # Balance classes using SMOTE
-        smote = SMOTE(random_state=42)
-        X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+#         # Balance classes using SMOTE
+#         smote = SMOTE(random_state=42)
+#         X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
 
-        # Train Logistic Regression
-        logreg = LogisticRegression()
-        logreg.fit(X_train_resampled, y_train_resampled)
+#         # Train Logistic Regression
+#         logreg = LogisticRegression()
+#         logreg.fit(X_train_resampled, y_train_resampled)
 
-        # Evaluate the model
-        y_prob = logreg.predict_proba(X_test)[:, 1]
-        fpr, tpr, _ = roc_curve(y_test, y_prob)
-        roc_auc = auc(fpr, tpr)
-    else:
-        # Default values if only one class is present
-        fpr, tpr, roc_auc = [], [], 0.0
+#         # Evaluate the model
+#         y_prob = logreg.predict_proba(X_test)[:, 1]
+#         fpr, tpr, _ = roc_curve(y_test, y_prob)
+#         roc_auc = auc(fpr, tpr)
+#     else:
+#         # Default values if only one class is present
+#         fpr, tpr, roc_auc = [], [], 0.0
 
-    # Prepare data for JavaScript
-    charts_data = {
-        "lda_wordcloud": wordcloud_data,
-        "kmeans": clv_data[["creditlimit", "total_payments", "Cluster"]].to_dict(orient="records"),
-        "kmeans_image": image_base64,
-        "logreg_roc": {"fpr": fpr.tolist(), "tpr": tpr.tolist(), "auc": roc_auc},
-    }
-    return render(request, "charts.html", {"charts_data": json.dumps(charts_data)})
+#     # Prepare data for JavaScript
+#     charts_data = {
+#         "lda_wordcloud": wordcloud_data,
+#         "kmeans": clv_data[["creditlimit", "total_payments", "Cluster"]].to_dict(orient="records"),
+#         "kmeans_image": image_base64,
+#         "logreg_roc": {"fpr": fpr.tolist(), "tpr": tpr.tolist(), "auc": roc_auc},
+#     }
+#     return render(request, "charts.html", {"charts_data": json.dumps(charts_data)})
 
 def business_insights_view(request):
     # Load data

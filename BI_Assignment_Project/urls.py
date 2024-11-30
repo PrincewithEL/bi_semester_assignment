@@ -20,6 +20,6 @@ from BI_Assignment_App.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("charts/", generate_charts, name="generate_charts"),
+    # path("charts/", generate_charts, name="generate_charts"),
     path("", business_insights_view, name="business_insights"),
 ]
