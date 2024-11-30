@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semester Assignments on Classic Models - Business Intelligence Dashboard</title>
+             {% load humanize %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+   <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+/*            box-sizing: border-box;*/
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Headers */
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 300;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #2980b9;
+            margin: 30px 0 20px;
+            padding-left: 15px;
+            border-left: 4px solid #3498db;
+        }
+
+        h3 {
+            color: #34495e;
+            margin: 25px 0 15px;
+            font-weight: 500;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+
+        .navbar-nav {
+            display: flex;
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-left: 20px;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: #3498db;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #3498db;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* KPI Cards Enhanced */
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(to right, #3498db, #2ecc71);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .kpi-card h4 {
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .kpi-card p {
+            color: #2c3e50;
+            font-size: 2rem;
+            font-weight: bold;
+            position: relative;
+            z-index: 1;
+        }
+
+        .kpi-card .icon {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            font-size: 4rem;
+            color: rgba(52, 152, 219, 0.1);
+            z-index: 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 15px;
+            }
+
+            .navbar-nav {
+                margin-top: 15px;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .nav-item {
+                margin: 10px 0;
+            }
+
+            .kpi-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .kpi-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Charts and Tables */
+        canvas {
+            width: 100% !important;
+            max-height: 300px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table thead {
+            background-color: #3498db;
+            color: white;
+        }
+
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        /* Dropdowns */
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 1rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .kpi-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .kpi-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <style type="text/css">
+    	/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #333;
+    color: #fff;
+}
+
+body.dark-mode .navbar {
+    background-color: #1c1c1c;
+}
+
+body.dark-mode .navbar-nav .nav-link {
+    color: white;
+}
+
+body.dark-mode .navbar-nav .nav-link:hover {
+    color: #3498db;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode p,
+body.dark-mode a {
+    color: #ecf0f1;
+}
+
+body.dark-mode .kpi-card {
+    background: #2c3e50;
+    color: #ecf0f1;
+}
+
+body.dark-mode table {
+    background-color: #444;
+}
+
+body.dark-mode table thead {
+    background-color: #555;
+}
+
+body.dark-mode table th,
+body.dark-mode table td,
+body.dark-mode table tr {
+    color: #ecf0f1;
+}
+
+body.dark-mode table td {
+    color: black;
+}
+
+body.dark-mode select {
+    background-color: #444;
+    color: #ecf0f1;
+}
+
+body.dark-mode .container {
+    background-color: #2c3e50;
+}
+
+    </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body class="bg-light">
+    <div class="container mt-4">
+        <h1 class="text-center">Classic Models - Business Intelligence Dashboard</h1>
+         <!-- Navbar -->
+    <nav class="navbar">
+        <a href="#" class="navbar-brand">By 137187 & 137497.</a>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="all">All</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="obj1">Objective No. One</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="obj2">Objective No. Two</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="obj3">Objective No. Three</a>
+            </li>            
+            <li class="nav-item">
+<a href="#" class="nav-link" id="settingsLink">Display Mode <i class="fas fa-sun"></i> / <i class="fas fa-moon"></i></a>
+<script>
+    // Toggle dark mode on click of the settings link
+    document.getElementById('settingsLink').addEventListener('click', function() {
+        // Toggle dark mode class on body
+ 	    document.getElementById('settingsLink').style.color = 'white';   
+        document.body.classList.toggle('dark-mode');
+    });
+</script>
+
+            </li>
+        </ul>
+    </nav>
+    <div id="one">
+        <h2>Objective No. One</h2>
+
+            <!-- KPI Container -->
+    <div class="kpi-container">
+        <div class="kpi-card">
+            <i class="icon fas fa-dollar-sign"></i>
+            <h4>Total Revenue</h4>
+            <p>${{ total_revenue|floatformat:2|intcomma }}</p>
+        </div>
+        <div class="kpi-card">
+            <i class="icon fas fa-shopping-cart"></i>
+            <h4>Average Order Size</h4>
+            <p>{{ average_order_size|floatformat:2 }} items</p>
+        </div>
+        <div class="kpi-card">
+            <i class="icon fas fa-users"></i>
+            <h4>Avg Customer Spend</h4>
+            <p>${{ average_customer_spend|floatformat:2|intcomma }}</p>
+        </div>
+        <div class="kpi-card">
+            <i class="icon fas fa-truck"></i>
+            <h4>Avg Fulfillment Time</h4>
+            <p>{{ avg_fulfillment_time|floatformat:2 }} days</p>
+        </div>
+    </div>
+
+    <!-- Top Selling Products Chart -->
+    <h3>Top-Selling Products by Revenue</h3>
+    <canvas id="topSellingProductsChart" width="400" height="200"></canvas>
+    <script>
+        const topSellingProductsData = JSON.parse('{{ top_selling_products|escapejs }}');
+        const topSellingLabels = topSellingProductsData.map(item => item.productname);
+        const topSellingRevenues = topSellingProductsData.map(item => item.revenue);
+
+        const topSellingProductsCtx = document.getElementById('topSellingProductsChart').getContext('2d');
+        new Chart(topSellingProductsCtx, {
+            type: 'bar',
+            data: {
+                labels: topSellingLabels,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: topSellingRevenues,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Products' } },
+                    y: { title: { display: true, text: 'Revenue ($)' } }
+                }
+            }
+        });
+    </script>
+
+    <!-- Product Line Performance Chart -->
+    <h3>Product Line Performance</h3>
+    <canvas id="productLineChart" width="400" height="200"></canvas>
+    <script>
+        const productLineData = JSON.parse('{{ product_line_revenue|escapejs }}');
+        const productLineLabels = productLineData.map(item => item.productline);
+        const productLineRevenues = productLineData.map(item => item.revenue);
+
+        const productLineCtx = document.getElementById('productLineChart').getContext('2d');
+        new Chart(productLineCtx, {
+            type: 'bar',
+            data: {
+                labels: productLineLabels,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: productLineRevenues,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Product Lines' } },
+                    y: { title: { display: true, text: 'Revenue ($)' } }
+                }
+            }
+        });
+    </script>
+
+    <!-- Monthly Revenue Trend Chart -->
+    <h3>Monthly Revenue Trend</h3>
+    <canvas id="monthlyRevenueChart" width="400" height="200"></canvas>
+    <script>
+        const monthlyRevenueData = JSON.parse('{{ monthly_revenue_trend|escapejs }}');
+        const monthlyLabels = monthlyRevenueData.map(item => item.year_month);
+        const monthlyRevenues = monthlyRevenueData.map(item => item.revenue);
+
+        const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+        new Chart(monthlyRevenueCtx, {
+            type: 'line',
+            data: {
+                labels: monthlyLabels,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: monthlyRevenues,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Month' } },
+                    y: { title: { display: true, text: 'Revenue ($)' } }
+                }
+            }
+        });
+    </script>
+
+    <!-- Employee Performance Table -->
+    <h3>Top 10 Employees by Performance</h3>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Sales ($)</th>
+                <th>Avg. Fulfillment Time (days)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employee_performance1 %}
+            <tr>
+                <td>{{ employee.salesrepemployeenumber }}</td>
+                <td>{{ employee.sales|floatformat:2 }}</td>
+                <td>{{ employee.avg_fulfillment_time|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="two">
+<h2>Objective No. Two</h2>
+
+    <!-- Customer Dropdown -->
+    <h3>Select Customer for Recommendations</h3>
+    <select id="customerDropdown">
+        <option value="">Select a Customer</option>
+        {% for customer_id in customer_ids %}
+        <option value="{{ customer_id }}" {% if customer_id == target_customer %} selected {% endif %}>Customer {{ customer_id }}</option>
+        {% endfor %}
+    </select>
+
+    <!-- Recommended Products Chart -->
+    <h3>Recommended Products for Customer {{ target_customer }}</h3>
+    <canvas id="recommendedProductsChart" width="400" height="200"></canvas>
+    <script>
+        // Parse the JSON data passed from the backend
+        const recommendedProductsData = JSON.parse('{{ recommended_products_data|escapejs }}');
+
+        const recommendedProductNames = recommendedProductsData.product_names;
+        const recommendedQuantities = recommendedProductsData.quantity;
+
+        const ctx = document.getElementById('recommendedProductsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: recommendedProductNames,
+                datasets: [{
+                    label: 'Recommended Products',
+                    data: recommendedQuantities,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Products' } },
+                    y: { title: { display: true, text: 'Recommendation Count' } }
+                }
+            }
+        });
+
+        // Dropdown change event to fetch new data for selected customer
+        document.getElementById('customerDropdown').addEventListener('change', function(event) {
+            const selectedCustomer = event.target.value;
+            if (selectedCustomer) {
+                window.location.href = '?customer=' + selectedCustomer;
+            }
+        });
+    </script>
+
+
+        <!-- Pie Chart for Recommendation Distribution -->
+    <h3>Recommendation Distribution for Customer {{ target_customer }}</h3>
+    <canvas id="recommendationDistributionChart" width="400" height="200"></canvas>
+    <script>
+        const pieData = JSON.parse('{{ pie_data|escapejs }}');
+        const ctxPie = document.getElementById('recommendationDistributionChart').getContext('2d');
+        new Chart(ctxPie, {
+            type: 'pie',
+            data: {
+                labels: pieData.labels,
+                datasets: [{
+                    data: pieData.data,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                }]
+            }
+        });
+    </script>
+
+    <!-- Radar Chart for Top Recommended Products -->
+    <h3>Top Recommended Products for Customer {{ target_customer }}</h3>
+    <canvas id="topRecommendedProductsChart" width="400" height="200"></canvas>
+    <script>
+        const radarData = JSON.parse('{{ radar_data|escapejs }}');
+        const ctxRadar = document.getElementById('topRecommendedProductsChart').getContext('2d');
+        new Chart(ctxRadar, {
+            type: 'radar',
+            data: {
+                labels: radarData.labels,
+                datasets: [{
+                    label: 'Top Recommended Products',
+                    data: radarData.values,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            }
+        });
+    </script>
+
+    <!-- Heatmap (Can be further styled to fit your needs) -->
+    <h3>Purchase Distribution Heatmap for Customer {{ target_customer }}</h3>
+    <canvas id="purchaseDistributionHeatmap" width="400" height="200"></canvas>
+    <script>
+        const heatmapData = JSON.parse('{{ heatmap_data|escapejs }}');
+        const ctxHeatmap = document.getElementById('purchaseDistributionHeatmap').getContext('2d');
+        new Chart(ctxHeatmap, {
+            type: 'line', // A basic line chart could be used for heatmap-style data visualization
+            data: {
+                labels: Array.from({ length: heatmapData.length }, (_, i) => i + 1),
+                datasets: heatmapData.map((data, index) => ({
+                    label: 'Similar Customer ' + (index + 1),
+                    data: data,
+                    borderColor: `rgba(${(index * 50) % 255}, ${(index * 100) % 255}, ${(index * 150) % 255}, 1)`,
+                    fill: false
+                }))
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: 'Products' } },
+                    y: { title: { display: true, text: 'Purchases' } }
+                }
+            }
+        });
+    </script>
+
+    <!-- RFM Segmentation Charts -->
+    <h3>Customer Segments</h3>
+
+    <!-- Customer Segments based on Recency and Frequency -->
+    <canvas id="customerSegmentsChart" width="400" height="200"></canvas>
+
+    <!-- Monetary Value Distribution Across Customer Segments -->
+    <canvas id="monetaryValueChart" width="400" height="200"></canvas>
+
+    <!-- Recency Distribution for each Segment -->
+    <canvas id="recencyDistributionChart" width="400" height="200"></canvas>
+
+    <!-- Predicted Lifetime Value by Customer Segment -->
+    <canvas id="predictedLTVChart" width="400" height="200"></canvas>
+
+    <script>
+        // Parse the JSON data passed from the backend
+        const segmentData = JSON.parse('{{ segment_data|escapejs }}');
+
+        // Utility function to filter data by segment
+        function filterBySegment(segment) {
+            if (segment === 'all') return [...Array(segmentData.recency.length).keys()];
+            return segmentData.segments
+                .map((seg, index) => (seg === parseInt(segment) ? index : -1))
+                .filter(index => index !== -1);
+        }
+
+        // Function to create Recency vs. Frequency Chart
+function createCustomerSegmentsChart(segment) {
+    const indices = filterBySegment(segment);
+    const data = indices.map(i => ({
+        x: segmentData.recency[i],
+        y: segmentData.frequency[i],
+    }));
+    const colors = indices.map(i => `hsl(${segmentData.segments[i] * 60}, 100%, 50%)`);
+
+    const ctx = document.getElementById('customerSegmentsChart').getContext('2d');
+
+    // Ensure the chart is destroyed if it exists
+    if (window.customerSegmentsChart instanceof Chart) {
+        window.customerSegmentsChart.destroy();
+    }
+
+    // Create a new chart
+    window.customerSegmentsChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Customer Segments',
+                data,
+                backgroundColor: colors,
+                pointRadius: 8,
+                pointHoverRadius: 10,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { title: { display: true, text: 'Recency (Days)' } },
+                y: { title: { display: true, text: 'Frequency (Orders)' } },
+            },
+        },
+    });
+}
+
+
+        // Function to create Monetary Value Chart
+function createMonetaryValueChart(segment) {
+    const indices = filterBySegment(segment);
+    const data = indices.map(i => segmentData.monetary[i]);
+    const labels = indices.map(i => `Customer ${i + 1}`);
+
+    const ctx = document.getElementById('monetaryValueChart').getContext('2d');
+
+    // Ensure the chart is destroyed if it exists
+    if (window.monetaryValueChart instanceof Chart) {
+        window.monetaryValueChart.destroy();
+    }
+
+    // Create a new chart
+    window.monetaryValueChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Monetary Value',
+                data,
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { title: { display: true, text: 'Customers' } },
+                y: { title: { display: true, text: 'Monetary Value ($)' } },
+            },
+        },
+    });
+}
+
+
+        // Function to create Recency Distribution Chart
+function createRecencyDistributionChart(segment) {
+    const indices = filterBySegment(segment);
+    const data = indices.map(i => segmentData.recency[i]);
+
+    const ctx = document.getElementById('recencyDistributionChart').getContext('2d');
+
+    // Ensure the chart is destroyed if it exists
+    if (window.recencyDistributionChart instanceof Chart) {
+        window.recencyDistributionChart.destroy();
+    }
+
+    // Create a new chart
+    window.recencyDistributionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: indices.map(i => `Customer ${i + 1}`),
+            datasets: [{
+                label: 'Recency (Days)',
+                data,
+                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                fill: true,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { title: { display: true, text: 'Customers' } },
+                y: { title: { display: true, text: 'Recency (Days)' } },
+            },
+        },
+    });
+}
+
+
+        // Function to create Predicted LTV Chart
+function createPredictedLTVChart(segment) {
+    const indices = filterBySegment(segment);
+    const data = indices.map(i => segmentData.predicted_LTV[i]);
+
+    const ctx = document.getElementById('predictedLTVChart').getContext('2d');
+
+    // Ensure the chart is destroyed if it exists
+    if (window.predictedLTVChart instanceof Chart) {
+        window.predictedLTVChart.destroy();
+    }
+
+    // Create a new chart
+    window.predictedLTVChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: indices.map(i => `Customer ${i + 1}`),
+            datasets: [{
+                label: 'Predicted Lifetime Value',
+                data,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { title: { display: true, text: 'Customers' } },
+                y: { title: { display: true, text: 'Lifetime Value ($)' } },
+            },
+        },
+    });
+}
+
+
+        // Initialize Charts with "All" Segments
+        createCustomerSegmentsChart('all');
+        createMonetaryValueChart('all');
+        createRecencyDistributionChart('all');
+        createPredictedLTVChart('all');
+
+        // Update Charts on Dropdown Change
+        document.getElementById('segmentDropdown').addEventListener('change', (event) => {
+            const selectedSegment = event.target.value;
+            createCustomerSegmentsChart(selectedSegment);
+            createMonetaryValueChart(selectedSegment);
+            createRecencyDistributionChart(selectedSegment);
+            createPredictedLTVChart(selectedSegment);
+        });
+    </script>
+
+<!-- Dropdown for selecting Product Line -->
+<h3>Select Product Line</h3>
+<select id="productLineDropdown">
+    {% for product_line in product_lines %}
+        <option value="{{ product_line }}">{{ product_line }}</option>
+    {% endfor %}
+</select>
+
+<h1>Product Demand Forecasting for "<span id="selectedProductLine">{{ product_line }}</span>"</h1>
+
+<!-- Monthly Demand for Products -->
+<h3>Monthly Demand for Products in {{ product_line }}</h3>
+<canvas id="monthlyDemandChart" width="400" height="200"></canvas>
+
+<!-- Forecasted Demand -->
+<h3>Forecasted Demand for Next 12 Months</h3>
+<canvas id="forecastChart" width="400" height="200"></canvas>
+
+<!-- Demand Heatmap -->
+<h3>Heatmap of Monthly Demand</h3>
+<canvas id="demandHeatmap" width="400" height="200"></canvas>
+
+<script>
+    // Get references to the dropdown and the selected product line element
+    const productLineDropdown = document.getElementById('productLineDropdown');
+    const selectedProductLineSpan = document.getElementById('selectedProductLine');
+
+    // Event listener for dropdown change
+    productLineDropdown.addEventListener('change', function() {
+        const selectedProductLine = productLineDropdown.value;
+
+        // Update the displayed product line
+        selectedProductLineSpan.textContent = selectedProductLine;
+
+        // Reload the page with the new product line as a query parameter
+        window.location.href = `${window.location.pathname}?product_line=${selectedProductLine}`;
+    });
+
+    // Parse the context data from Django
+    const demandData = {{ demand_data|safe }};
+    const forecastDates = {{ forecast_dates|safe }};
+    const predictedDemand = {{ predicted_demand|safe }};
+
+    // Ensure demandData is properly formatted
+    if (!demandData || !forecastDates || !predictedDemand) {
+        console.error("Error: Missing required data for rendering charts.");
+    } else {
+        // Prepare data for charts
+        const productCodes = Object.keys(demandData).filter(key => key !== 'year_month');
+        const monthlyLabels = demandData['year_month'].map(period => String(period));
+
+        // Prepare datasets for Monthly Demand Chart
+        const monthlyDemandDatasets = productCodes.map(product => ({
+            label: product,
+            data: demandData[product],
+            borderColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
+            backgroundColor: `hsl(${Math.random() * 360}, 70%, 50%, 0.5)`,
+            fill: true,
+        }));
+
+        // Render Monthly Demand Chart
+        const monthlyDemandCtx = document.getElementById('monthlyDemandChart')?.getContext('2d');
+        if (monthlyDemandCtx) {
+            new Chart(monthlyDemandCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyLabels,
+                    datasets: monthlyDemandDatasets,
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: {
+                        x: { title: { display: true, text: 'Month' } },
+                        y: { title: { display: true, text: 'Quantity Ordered' } },
+                    },
+                },
+            });
+        }
+
+        // Prepare datasets for Forecast Chart
+        const forecastDatasets = productCodes.map(product => ({
+            label: product,
+            data: predictedDemand[product],
+            borderColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
+            backgroundColor: `hsl(${Math.random() * 360}, 70%, 50%, 0.5)`,
+            fill: true,
+        }));
+
+        // Render Forecast Chart
+        const forecastCtx = document.getElementById('forecastChart')?.getContext('2d');
+        if (forecastCtx) {
+            new Chart(forecastCtx, {
+                type: 'line',
+                data: {
+                    labels: forecastDates,
+                    datasets: forecastDatasets,
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: {
+                        x: { title: { display: true, text: 'Month' } },
+                        y: { title: { display: true, text: 'Predicted Quantity Ordered' } },
+                    },
+                },
+            });
+        }
+
+        // Prepare data for Demand Heatmap
+        const heatmapData = {
+            labels: monthlyLabels,
+            datasets: productCodes.map((product, index) => ({
+                label: product,
+                data: demandData[product],
+                backgroundColor: `hsl(${index * (360 / productCodes.length)}, 70%, 50%)`,
+                borderWidth: 1,
+            })),
+        };
+
+        // Render Demand Heatmap
+        const heatmapCtx = document.getElementById('demandHeatmap')?.getContext('2d');
+        if (heatmapCtx) {
+            new Chart(heatmapCtx, {
+                type: 'bar',
+                data: heatmapData,
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: {
+                        x: { stacked: true, title: { display: true, text: 'Month' } },
+                        y: { stacked: true, title: { display: true, text: 'Quantity Ordered' } },
+                    },
+                },
+            });
+        }
+    }
+</script>
+</div>
+<div id="three">
+        <h2>Objective No. Three</h2>
+
+<!-- Dropdown for Topic Selection -->
+<div class="dropdown-container">
+    <h3 for="topicDropdown">Select Topic:</h3>
+    <select id="topicDropdown"></select>
+</div>
+
+<!-- Word Cloud -->
+<h3>Word Cloud</h3>
+<div id="wordCloud" class="word-cloud"></div>
+
+<!-- Top Words Bar Chart -->
+<h3>Top Words Bar Chart</h3>
+<canvas id="topWordsChart" width="400" height="200"></canvas>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Load D3.js and D3-cloud -->
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.5/d3.layout.cloud.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Use JSON.parse to safely parse the data
+    const topicsData = JSON.parse('{{ topics|escapejs }}');
+    const wordCloudData = JSON.parse('{{ word_cloud_data|escapejs }}');
+
+    if (!topicsData || !wordCloudData) {
+        console.error('Topics or word cloud data is missing');
+        return;
+    }
+
+    // Safe element selection
+    const topicDropdown = document.querySelector('#topicDropdown');
+    const wordCloudContainer = document.querySelector("#wordCloud");
+    const topWordsChartCanvas = document.querySelector('#topWordsChart');
+
+    if (!topicDropdown || !wordCloudContainer || !topWordsChartCanvas) {
+        console.error('Required DOM elements not found');
+        return;
+    }
+
+    // Populate topic dropdown
+    topicsData.forEach((topic, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = topic.topic;
+        topicDropdown.appendChild(option);
+    });
+
+    // Function to generate word cloud using D3.js
+    function createWordCloud(data) {
+        // Clear previous cloud
+        d3.select("#wordCloud").html("");
+
+        const svg = d3.select("#wordCloud")
+            .append("svg")
+            .attr("width", 800)
+            .attr("height", 400)
+            .append("g")
+            .attr("transform", "translate(400,200)");
+
+        const layout = d3.layout.cloud()
+            .size([800, 400])
+            .words(Object.keys(data).map(word => ({
+                text: word,
+                size: data[word] * 10,
+            })))
+            .padding(5)
+            .rotate(() => ~~(Math.random() * 2) * 90)
+            .font("Impact")
+            .fontSize(d => d.size)
+            .on("end", draw);
+
+        layout.start();
+
+        function draw(words) {
+            svg.selectAll("text")
+                .data(words)
+                .enter().append("text")
+                .style("font-size", d => `${d.size}px`)
+                .style("fill", () => d3.schemeCategory10[Math.floor(Math.random() * 10)])
+                .attr("text-anchor", "middle")
+                .attr("transform", d => `translate(${[d.x, d.y]}) rotate(${d.rotate})`)
+                .text(d => d.text);
+        }
+    }
+
+    // Function to create top words bar chart using Chart.js
+    function createTopWordsChart(data) {
+        const labels = Object.keys(data);
+        const frequencies = Object.values(data);
+
+        const ctx = topWordsChartCanvas.getContext('2d');
+        
+        // Safely destroy existing chart if it exists
+        if (window.topWordsChart && typeof window.topWordsChart.destroy === 'function') {
+            window.topWordsChart.destroy();
+        }
+
+        window.topWordsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Word Frequency',
+                    data: frequencies,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                }],
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { title: { display: true, text: 'Words' } },
+                    y: { title: { display: true, text: 'Frequency' } },
+                },
+            },
+        });
+    }
+
+    // Initialize with the first topic
+    if (wordCloudData.length > 0) {
+        createWordCloud(wordCloudData[0].words);
+        createTopWordsChart(wordCloudData[0].words);
+    }
+
+    // Update charts when a new topic is selected
+    topicDropdown.addEventListener('change', event => {
+        const topicIndex = event.target.value;
+        const selectedTopicData = wordCloudData[topicIndex].words;
+        
+        createWordCloud(selectedTopicData);
+        createTopWordsChart(selectedTopicData);
+    });
+});
+</script>
+</div>
+<script>
+    document.getElementById('all').addEventListener('click', function() {
+	document.getElementById('all').style.color = 'white';    	
+	document.getElementById('one').style.display = 'block';
+	document.getElementById('two').style.display = 'block';
+	document.getElementById('three').style.display = 'block';
+    });
+    document.getElementById('obj1').addEventListener('click', function() {
+	document.getElementById('one').style.color = 'white';   
+	document.getElementById('one').style.display = 'block';
+	document.getElementById('two').style.display = 'none';
+	document.getElementById('three').style.display = 'none';
+    });
+    document.getElementById('obj2').addEventListener('click', function() {
+	document.getElementById('two').style.color = 'white';   
+	document.getElementById('one').style.display = 'none';
+	document.getElementById('two').style.display = 'block';
+	document.getElementById('three').style.display = 'none';
+    });
+    document.getElementById('obj3').addEventListener('click', function() {
+ 	document.getElementById('three').style.color = 'white';   
+	document.getElementById('one').style.display = 'none';
+	document.getElementById('two').style.display = 'none';
+	document.getElementById('three').style.display = 'block';
+    });
+</script>
+</body>
+</html>

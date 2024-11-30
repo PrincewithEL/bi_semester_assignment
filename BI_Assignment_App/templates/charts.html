@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualizations</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.5/d3.layout.cloud.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --secondary-color: #34a853;
+            --background-color: #f4f6f9;
+            --card-background: white;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Google Sans', Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), #6a11cb);
+            color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--box-shadow);
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+
+        .dashboard-header .summary {
+            text-align: right;
+        }
+
+        .visualization-grid {
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .visualization-card {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .visualization-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
+        }
+
+        .visualization-card .card-icon {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            opacity: 0.1;
+            font-size: 3rem;
+            color: var(--primary-color);
+        }
+
+        .visualization-card h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .visualization-card .description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .visualization-placeholder {
+            background-color: #f1f3f4;
+            border-radius: 8px;
+            height: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+
+        .methodology-section {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .methodology-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .methodology-item {
+            background-color: #f1f3f4;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 1rem;
+            }
+            .dashboard-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .dashboard-header .summary {
+                text-align: center;
+                margin-top: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="dashboard-header">
+            <div class="title">
+                <h1>Business Intelligence Dashboard (137187 & 137497)</h1>
+            </div>
+            <div class="summary">
+                <p>Comprehensive Customer Insights</p>
+                <p>Last Updated: November 29, 2024</p>
+            </div>
+        </div>
+
+        <div class="visualization-grid">
+            <div class="visualization-card">
+                <div class="card-icon">📊</div>
+                <h2>
+                    <span>Topic Modeling Analysis</span>
+                </h2>
+                <p class="description">
+                    Uncover hidden themes in customer feedback using Latent Dirichlet Allocation (LDA)
+                </p>
+                <div id="wordCloud" class="">
+                    Word Cloud Visualization
+                </div>
+            </div>
+
+            <div class="visualization-card">
+                <div class="card-icon">📈</div>
+                <h2>
+                    <span>Customer Lifetime Value</span>
+                </h2>
+                <p class="description">
+                    Predictive clustering to segment customers based on potential future value
+                </p>
+                <canvas id="kmeansChart" class="visualization-placeholder"></canvas>
+            </div>
+
+            <div class="visualization-card">
+                <div class="card-icon">📉</div>
+                <h2>
+                    <span>Sales Channel Performance</span>
+                </h2>
+                <p class="description">
+                    Logistic regression analysis to evaluate effectiveness of different sales channels
+                </p>
+                <canvas id="rocCurve" class="visualization-placeholder"></canvas>
+            </div>
+        </div>
+
+        <div class="methodology-section">
+            <h2>Analysis Methodology</h2>
+            <div class="methodology-grid">
+                <div class="methodology-item">
+                    <h3>Topic Modeling</h3>
+                    <p>Identify common themes in customer feedback using Latent Dirichlet Allocation (LDA).</p>
+                </div>
+                <div class="methodology-item">
+                    <h3>Lifetime Value</h3>
+                    <p>Segment and predict future customer value through advanced clustering techniques.</p>
+                </div>
+                <div class="methodology-item">
+                    <h3>Sales Channel Analysis</h3>
+                    <p>Evaluate performance of different sales channels using logistic regression.</p>
+                </div>
+            </div>
+            <p class="description" style="margin-top: 1rem;">
+                <em>Note: This analysis provides strategic insights while acknowledging limitations in demographic depth and external market factors.</em>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
