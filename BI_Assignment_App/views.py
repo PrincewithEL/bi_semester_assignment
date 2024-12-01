@@ -41,82 +41,6 @@ def load_data(query):
 
 from collections import Counter
 
-# def generate_charts(request):
-#     # LDA Word Cloud Data
-#     products = load_data("SELECT productdescription FROM products")
-#     text_data = " ".join(products['productdescription'].dropna().tolist())
-#     word_frequencies = Counter(text_data.split())
-#     wordcloud_data = [{"word": word, "weight": count} for word, count in word_frequencies.items() if count > 2]
-
-#     # Load Data
-#     customers = load_data("SELECT customernumber, creditlimit FROM customers")
-#     payments = load_data("SELECT customernumber, SUM(amount) AS total_payments FROM payments GROUP BY customernumber")
-#     clv_data = pd.merge(customers, payments, on="customernumber", how="left").fillna(0)
-#     clv_data["creditlimit"] = clv_data["creditlimit"].astype(float)
-#     clv_data["total_payments"] = clv_data["total_payments"].astype(float)
-
-#     # K-Means Clustering
-#     kmeans = KMeans(n_clusters=3, random_state=42)
-#     clv_data["Cluster"] = kmeans.fit_predict(clv_data[["creditlimit", "total_payments"]])
-
-#     # Plot the clusters
-#     plt.figure(figsize=(8, 6))
-#     for cluster in clv_data["Cluster"].unique():
-#         cluster_data = clv_data[clv_data["Cluster"] == cluster]
-#         plt.scatter(cluster_data["creditlimit"], cluster_data["total_payments"], label=f"Cluster {cluster}")
-#     plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], c="red", marker="X", s=200, label="Centroids")
-#     plt.xlabel("Credit Limit")
-#     plt.ylabel("Total Payments")
-#     plt.title("K-Means Clustering")
-#     plt.legend()
-
-#     # Save the plot to a Base64 string
-#     buf = io.BytesIO()
-#     plt.savefig(buf, format="png", bbox_inches="tight")
-#     buf.seek(0)
-#     image_base64 = base64.b64encode(buf.read()).decode("utf-8")
-#     buf.close()
-
-#     # Logistic Regression for Price Optimization
-#     order_details = load_data("SELECT quantityordered, priceeach FROM orderdetails")
-#     order_details['high_volume_purchase'] = (
-#         order_details['quantityordered'] > order_details['quantityordered'].median()
-#     ).astype(int)
-
-#     X = order_details[["priceeach", "quantityordered"]]
-#     y = order_details["high_volume_purchase"]
-
-#     if len(y.unique()) > 1:  # Proceed only if there are at least two classes
-#         # Split the data
-#         X_train, X_test, y_train, y_test = train_test_split(
-#             X, y, test_size=0.2, random_state=42, stratify=y
-#         )
-
-#         # Balance classes using SMOTE
-#         smote = SMOTE(random_state=42)
-#         X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
-
-#         # Train Logistic Regression
-#         logreg = LogisticRegression()
-#         logreg.fit(X_train_resampled, y_train_resampled)
-
-#         # Evaluate the model
-#         y_prob = logreg.predict_proba(X_test)[:, 1]
-#         fpr, tpr, _ = roc_curve(y_test, y_prob)
-#         roc_auc = auc(fpr, tpr)
-#     else:
-#         # Default values if only one class is present
-#         fpr, tpr, roc_auc = [], [], 0.0
-
-#     # Prepare data for JavaScript
-#     charts_data = {
-#         "lda_wordcloud": wordcloud_data,
-#         "kmeans": clv_data[["creditlimit", "total_payments", "Cluster"]].to_dict(orient="records"),
-#         "kmeans_image": image_base64,
-#         "logreg_roc": {"fpr": fpr.tolist(), "tpr": tpr.tolist(), "auc": roc_auc},
-#     }
-#     return render(request, "charts.html", {"charts_data": json.dumps(charts_data)})
-
 def business_insights_view(request):
     # Load data
     orders = load_data("SELECT * FROM orders")
@@ -190,7 +114,7 @@ def business_insights_view(request):
     }).sort_values(by='sales', ascending=False).reset_index()
 
     # Convert employee performance to float as well
-    employee_performance = employee_performance.applymap(lambda x: float(x) if isinstance(x, (int, float, Decimal)) else x)
+    employee_performance = employee_performance.map(lambda x: float(x) if isinstance(x, (int, float, Decimal)) else x)
     employee_performance_json = employee_performance.head(10).to_dict(orient='records')
 
     # Convert Decimal to float in the data being passed to the template
@@ -334,7 +258,7 @@ def business_insights_view(request):
         # Prepare data for forecasting
         X = np.array([i.month for i in demand_pivot.index]).reshape(-1, 1)  # Month as feature
         last_period = demand_pivot.index[-1]
-        future_months = np.array([i.month for i in pd.date_range(start=last_period, periods=12, freq='M')]).reshape(-1, 1)
+        future_months = np.array([i.month for i in pd.date_range(start=last_period, periods=12, freq='ME')]).reshape(-1, 1)
 
         # Predict demand for each product
         predicted_demand = {}
@@ -348,7 +272,7 @@ def business_insights_view(request):
         demand_pivot.index = demand_pivot.index.strftime('%Y-%m')
 
         # Generate forecast dates for serialization
-        forecast_dates = pd.date_range(start=last_period, periods=12, freq='M').strftime('%b %Y').tolist()
+        forecast_dates = pd.date_range(start=last_period, periods=12, freq='ME').strftime('%b %Y').tolist()
 
         # Preprocess the comments column
         comments = orders['comments'].dropna()  # Drop missing comments
@@ -361,16 +285,25 @@ def business_insights_view(request):
         except Exception as e:
             print(f"NLTK download error: {e}")
 
-        # Initialize lemmatizer and stop words
-        lemmatizer = WordNetLemmatizer()
-        stop_words = set(stopwords.words('english'))
-
         def preprocess_text(text):
             # Handle non-string inputs
             if not isinstance(text, str):
                 return ''
             
             try:
+                # Ensure NLTK resources are downloaded
+                try:
+                    nltk.download('punkt', quiet=True)
+                    nltk.download('stopwords', quiet=True)
+                    nltk.download('wordnet', quiet=True)
+                    nltk.download('omw-1.4', quiet=True)
+                except Exception as download_error:
+                    print(f"NLTK download error: {download_error}")
+                
+                # Initialize lemmatizer and stop words
+                lemmatizer = WordNetLemmatizer()
+                stop_words = set(stopwords.words('english'))
+                
                 # Lowercase
                 text = text.lower()
                 
@@ -385,10 +318,19 @@ def business_insights_view(request):
                 for word in words:
                     if word not in stop_words:
                         try:
-                            lemma = lemmatizer.lemmatize(word)
+                            # Try lemmatization with different POS tags
+                            lemma_attempts = [
+                                lemmatizer.lemmatize(word, pos='n'),  # noun
+                                lemmatizer.lemmatize(word, pos='v'),  # verb
+                                lemmatizer.lemmatize(word, pos='a'),  # adjective
+                                lemmatizer.lemmatize(word)  # default
+                            ]
+                            # Take the first successful lemmatization
+                            lemma = next((l for l in lemma_attempts if l != word), word)
                             processed_words.append(lemma)
-                        except Exception:
+                        except Exception as lemma_error:
                             # If lemmatization fails, keep original word
+                            print(f"Lemmatization error for word '{word}': {lemma_error}")
                             processed_words.append(word)
                 
                 return ' '.join(processed_words)
