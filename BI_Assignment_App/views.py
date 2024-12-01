@@ -279,7 +279,12 @@ def business_insights_view(request):
 
         # Preprocess the comments column
         comments = orders['comments'].dropna()  # Drop missing comments
-        comments = comments.sample(n=5000, random_state=42)
+        # Ensure comments is not empty before sampling
+        if not comments.empty:
+            sample_size = min(100, len(comments))  # Take a maximum of 100 comments or less if not available
+            comments = comments.sample(n=sample_size, random_state=42)
+        else:
+            comments = comments  # No sampling if there are no comments
 
         # Ensure NLTK resources are downloaded
         try:
@@ -353,7 +358,7 @@ def business_insights_view(request):
 
         # Vectorize comments
         # vectorizer = CountVectorizer(max_features=1000)
-        vectorizer = CountVectorizer(max_features=500)
+        vectorizer = CountVectorizer(max_features=50)
         X = vectorizer.fit_transform(cleaned_comments)
 
         # Perform LDA
