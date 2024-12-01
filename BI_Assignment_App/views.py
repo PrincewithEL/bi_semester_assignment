@@ -190,8 +190,7 @@ def business_insights_view(request):
     }).sort_values(by='sales', ascending=False).reset_index()
 
     # Convert employee performance to float as well
-    # employee_performance = employee_performance.applymap(lambda x: float(x) if isinstance(x, (int, float, Decimal)) else x)
-    employee_performance = employee_performance.apply(lambda x: x.map(lambda val: float(val) if isinstance(val, (int, float, Decimal)) else val))
+    employee_performance = employee_performance.applymap(lambda x: float(x) if isinstance(x, (int, float, Decimal)) else x)
     employee_performance_json = employee_performance.head(10).to_dict(orient='records')
 
     # Convert Decimal to float in the data being passed to the template
@@ -353,27 +352,35 @@ def business_insights_view(request):
 
         # Preprocess the comments column
         comments = orders['comments'].dropna()  # Drop missing comments
+
+        # Ensure NLTK resources are downloaded
+        try:
+            nltk.download('punkt', quiet=True)
+            nltk.download('stopwords', quiet=True)
+            nltk.download('wordnet', quiet=True)
+        except Exception as e:
+            print(f"NLTK download error: {e}")
+
+        # Initialize lemmatizer and stop words
         lemmatizer = WordNetLemmatizer()
         stop_words = set(stopwords.words('english'))
 
         def preprocess_text(text):
+            # Handle non-string inputs
             if not isinstance(text, str):
                 return ''
             
-            text = text.lower()  # Lowercase
-            text = ''.join([char for char in text if char.isalpha() or char.isspace()])  # Remove special characters
-            words = text.split()  # Tokenize
-            
             try:
-                # Attempt to download resources if not already downloaded
-                nltk.download('punkt', quiet=True)
-                nltk.download('stopwords', quiet=True)
-                nltk.download('wordnet', quiet=True)
-
-                lemmatizer = WordNetLemmatizer()
-                stop_words = set(stopwords.words('english'))
+                # Lowercase
+                text = text.lower()
                 
-                # More robust lemmatization with error handling
+                # Remove special characters
+                text = ''.join([char for char in text if char.isalpha() or char.isspace()])
+                
+                # Tokenize
+                words = text.split()
+                
+                # Lemmatize and remove stopwords with error handling
                 processed_words = []
                 for word in words:
                     if word not in stop_words:
@@ -381,15 +388,22 @@ def business_insights_view(request):
                             lemma = lemmatizer.lemmatize(word)
                             processed_words.append(lemma)
                         except Exception:
-                            # If lemmatization fails, keep the original word
+                            # If lemmatization fails, keep original word
                             processed_words.append(word)
                 
                 return ' '.join(processed_words)
             
             except Exception as e:
-                # Fallback to simple preprocessing if NLTK resources fail
-                print(f"NLTK processing failed: {e}")
-                return ' '.join(words)
+                # Fallback for any unexpected errors
+                print(f"Preprocessing error for text '{text}': {e}")
+                return text
+
+        # Apply preprocessing with error handling
+        try:
+            cleaned_comments = comments.apply(preprocess_text)
+        except Exception as e:
+            print(f"Error in comment preprocessing: {e}")
+            cleaned_comments = comments  # Fallback to original comments if processing fails
 
         # Vectorize comments
         vectorizer = CountVectorizer(max_features=1000)
