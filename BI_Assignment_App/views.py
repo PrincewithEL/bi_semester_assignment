@@ -26,13 +26,13 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation as LDA
 matplotlib.use("Agg")
 
-# try:
-#     nltk.download('punkt', quiet=True)
-#     nltk.download('stopwords', quiet=True)
-#     nltk.download('wordnet', quiet=True)
-#     nltk.download('omw-1.4', quiet=True)
-# except Exception as e:
-#     print(f"NLTK download error: {e}")
+try:
+    nltk.download('punkt', quiet=True)
+    nltk.download('stopwords', quiet=True)
+    nltk.download('wordnet', quiet=True)
+    nltk.download('omw-1.4', quiet=True)
+except Exception as e:
+    print(f"NLTK download error: {e}")
 
 def load_data(query):
     """Load data using raw SQL query."""
@@ -278,102 +278,104 @@ def business_insights_view(request):
         forecast_dates = pd.date_range(start=last_period, periods=12, freq='ME').strftime('%b %Y').tolist()
 
         # Preprocess the comments column
-        # comments = orders['comments'].dropna()  # Drop missing comments
+        comments = orders['comments'].dropna()  # Drop missing comments
+        comments = comments.sample(n=5000, random_state=42)
 
-        # # Ensure NLTK resources are downloaded
-        # try:
-        #     nltk.download('punkt', quiet=True)
-        #     nltk.download('stopwords', quiet=True)
-        #     nltk.download('wordnet', quiet=True)
-        # except Exception as e:
-        #     print(f"NLTK download error: {e}")
+        # Ensure NLTK resources are downloaded
+        try:
+            nltk.download('punkt', quiet=True)
+            nltk.download('stopwords', quiet=True)
+            nltk.download('wordnet', quiet=True)
+        except Exception as e:
+            print(f"NLTK download error: {e}")
 
-        # def preprocess_text(text):
-        #     # Handle non-string inputs
-        #     if not isinstance(text, str):
-        #         return ''
+        def preprocess_text(text):
+            # Handle non-string inputs
+            if not isinstance(text, str):
+                return ''
             
-        #     try:
-        #         # Ensure NLTK resources are downloaded
-        #         try:
-        #             nltk.download('punkt', quiet=True)
-        #             nltk.download('stopwords', quiet=True)
-        #             nltk.download('wordnet', quiet=True)
-        #             nltk.download('omw-1.4', quiet=True)
-        #         except Exception as download_error:
-        #             print(f"NLTK download error: {download_error}")
+            try:
+                # Ensure NLTK resources are downloaded
+                try:
+                    nltk.download('punkt', quiet=True)
+                    nltk.download('stopwords', quiet=True)
+                    nltk.download('wordnet', quiet=True)
+                    nltk.download('omw-1.4', quiet=True)
+                except Exception as download_error:
+                    print(f"NLTK download error: {download_error}")
                 
-        #         # Initialize lemmatizer and stop words
-        #         lemmatizer = WordNetLemmatizer()
-        #         stop_words = set(stopwords.words('english'))
+                # Initialize lemmatizer and stop words
+                lemmatizer = WordNetLemmatizer()
+                stop_words = set(stopwords.words('english'))
                 
-        #         # Lowercase
-        #         text = text.lower()
+                # Lowercase
+                text = text.lower()
                 
-        #         # Remove special characters
-        #         text = ''.join([char for char in text if char.isalpha() or char.isspace()])
+                # Remove special characters
+                text = ''.join([char for char in text if char.isalpha() or char.isspace()])
                 
-        #         # Tokenize
-        #         words = text.split()
+                # Tokenize
+                words = text.split()
                 
-        #         # Lemmatize and remove stopwords with error handling
-        #         processed_words = []
-        #         for word in words:
-        #             if word not in stop_words:
-        #                 try:
-        #                     # Try lemmatization with different POS tags
-        #                     lemma_attempts = [
-        #                         lemmatizer.lemmatize(word, pos='n'),  # noun
-        #                         lemmatizer.lemmatize(word, pos='v'),  # verb
-        #                         lemmatizer.lemmatize(word, pos='a'),  # adjective
-        #                         lemmatizer.lemmatize(word)  # default
-        #                     ]
-        #                     # Take the first successful lemmatization
-        #                     lemma = next((l for l in lemma_attempts if l != word), word)
-        #                     processed_words.append(lemma)
-        #                 except Exception as lemma_error:
-        #                     # If lemmatization fails, keep original word
-        #                     print(f"Lemmatization error for word '{word}': {lemma_error}")
-        #                     processed_words.append(word)
+                # Lemmatize and remove stopwords with error handling
+                processed_words = []
+                for word in words:
+                    if word not in stop_words:
+                        try:
+                            # Try lemmatization with different POS tags
+                            lemma_attempts = [
+                                lemmatizer.lemmatize(word, pos='n'),  # noun
+                                lemmatizer.lemmatize(word, pos='v'),  # verb
+                                lemmatizer.lemmatize(word, pos='a'),  # adjective
+                                lemmatizer.lemmatize(word)  # default
+                            ]
+                            # Take the first successful lemmatization
+                            lemma = next((l for l in lemma_attempts if l != word), word)
+                            processed_words.append(lemma)
+                        except Exception as lemma_error:
+                            # If lemmatization fails, keep original word
+                            print(f"Lemmatization error for word '{word}': {lemma_error}")
+                            processed_words.append(word)
                 
-        #         return ' '.join(processed_words)
+                return ' '.join(processed_words)
             
-        #     except Exception as e:
-        #         # Fallback for any unexpected errors
-        #         print(f"Preprocessing error for text '{text}': {e}")
-        #         return text
+            except Exception as e:
+                # Fallback for any unexpected errors
+                print(f"Preprocessing error for text '{text}': {e}")
+                return text
 
-        # # Apply preprocessing with error handling
-        # try:
-        #     cleaned_comments = comments.apply(preprocess_text)
-        # except Exception as e:
-        #     print(f"Error in comment preprocessing: {e}")
-        #     cleaned_comments = comments  # Fallback to original comments if processing fails
+        # Apply preprocessing with error handling
+        try:
+            cleaned_comments = comments.apply(preprocess_text)
+        except Exception as e:
+            print(f"Error in comment preprocessing: {e}")
+            cleaned_comments = comments  # Fallback to original comments if processing fails
 
-        # # Vectorize comments
+        # Vectorize comments
         # vectorizer = CountVectorizer(max_features=1000)
-        # X = vectorizer.fit_transform(cleaned_comments)
+        vectorizer = CountVectorizer(max_features=500)
+        X = vectorizer.fit_transform(cleaned_comments)
 
-        # # Perform LDA
-        # n_topics = 5
-        # lda = LDA(n_components=n_topics, random_state=42)
-        # lda.fit(X)
+        # Perform LDA
+        n_topics = 5
+        lda = LDA(n_components=n_topics, random_state=42)
+        lda.fit(X)
 
-        # # Extract topics and top words
-        # feature_names = vectorizer.get_feature_names_out()
-        # topics = []
-        # for topic_idx, topic in enumerate(lda.components_):
-        #     top_words = [feature_names[i] for i in topic.argsort()[:-11:-1]]  # Top 10 words per topic
-        #     topics.append({'topic': f"Topic {topic_idx + 1}", 'words': top_words})
+        # Extract topics and top words
+        feature_names = vectorizer.get_feature_names_out()
+        topics = []
+        for topic_idx, topic in enumerate(lda.components_):
+            top_words = [feature_names[i] for i in topic.argsort()[:-11:-1]]  # Top 10 words per topic
+            topics.append({'topic': f"Topic {topic_idx + 1}", 'words': top_words})
 
-        # # Prepare word cloud data for D3.js
-        # word_cloud_data = []
-        # for topic_idx, topic in enumerate(lda.components_):
-        #     word_freq = {feature_names[i]: topic[i] for i in topic.argsort()[:-11:-1]}
-        #     word_cloud_data.append({'topic': f"Topic {topic_idx + 1}", 'words': word_freq})
+        # Prepare word cloud data for D3.js
+        word_cloud_data = []
+        for topic_idx, topic in enumerate(lda.components_):
+            word_freq = {feature_names[i]: topic[i] for i in topic.argsort()[:-11:-1]}
+            word_cloud_data.append({'topic': f"Topic {topic_idx + 1}", 'words': word_freq})
 
-        # # Prepare topic distribution data for visualization
-        # topic_distribution = lda.transform(X).tolist()
+        # Prepare topic distribution data for visualization
+        topic_distribution = lda.transform(X).tolist()
 
     context = {
         "total_revenue": float(total_revenue),
@@ -398,9 +400,9 @@ def business_insights_view(request):
         "forecast_dates": json.dumps(forecast_dates),  # Serialize forecast dates
         "predicted_demand": json.dumps(predicted_demand),  # Serialize predicted demand
         "product_line": product_line,
-        # "topics": json.dumps(topics),
-        # "word_cloud_data": json.dumps(word_cloud_data),
-        # "topic_distribution": json.dumps(topic_distribution),
+        "topics": json.dumps(topics),
+        "word_cloud_data": json.dumps(word_cloud_data),
+        "topic_distribution": json.dumps(topic_distribution),
         "product_lines": products['productline'].unique()
     }
 
