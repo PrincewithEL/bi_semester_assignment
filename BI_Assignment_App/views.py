@@ -190,7 +190,8 @@ def business_insights_view(request):
     }).sort_values(by='sales', ascending=False).reset_index()
 
     # Convert employee performance to float as well
-    employee_performance = employee_performance.applymap(lambda x: float(x) if isinstance(x, (int, float, Decimal)) else x)
+    # employee_performance = employee_performance.applymap(lambda x: float(x) if isinstance(x, (int, float, Decimal)) else x)
+    employee_performance = employee_performance.apply(lambda x: x.map(lambda val: float(val) if isinstance(val, (int, float, Decimal)) else val))
     employee_performance_json = employee_performance.head(10).to_dict(orient='records')
 
     # Convert Decimal to float in the data being passed to the template
@@ -356,13 +357,39 @@ def business_insights_view(request):
         stop_words = set(stopwords.words('english'))
 
         def preprocess_text(text):
+            if not isinstance(text, str):
+                return ''
+            
             text = text.lower()  # Lowercase
             text = ''.join([char for char in text if char.isalpha() or char.isspace()])  # Remove special characters
             words = text.split()  # Tokenize
-            words = [lemmatizer.lemmatize(word) for word in words if word not in stop_words]  # Lemmatize and remove stopwords
-            return ' '.join(words)
+            
+            try:
+                # Attempt to download resources if not already downloaded
+                nltk.download('punkt', quiet=True)
+                nltk.download('stopwords', quiet=True)
+                nltk.download('wordnet', quiet=True)
 
-        cleaned_comments = comments.apply(preprocess_text)
+                lemmatizer = WordNetLemmatizer()
+                stop_words = set(stopwords.words('english'))
+                
+                # More robust lemmatization with error handling
+                processed_words = []
+                for word in words:
+                    if word not in stop_words:
+                        try:
+                            lemma = lemmatizer.lemmatize(word)
+                            processed_words.append(lemma)
+                        except Exception:
+                            # If lemmatization fails, keep the original word
+                            processed_words.append(word)
+                
+                return ' '.join(processed_words)
+            
+            except Exception as e:
+                # Fallback to simple preprocessing if NLTK resources fail
+                print(f"NLTK processing failed: {e}")
+                return ' '.join(words)
 
         # Vectorize comments
         vectorizer = CountVectorizer(max_features=1000)

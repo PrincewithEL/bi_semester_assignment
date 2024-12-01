@@ -1002,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', function () {
     topicsData.forEach((topic, index) => {
         const option = document.createElement('option');
         option.value = index;
-        option.textContent = topic.topic;
+        option.textContent = `${topic.topic}: ${topic.words.slice(0, 3).join(', ')}...`;
         topicDropdown.appendChild(option);
     });
 
