@@ -159,10 +159,10 @@
         .kpi-card .icon {
             position: absolute;
             top: 50%;
-            right: 10px;
+            right: 20px;
             transform: translateY(-50%);
             font-size: 4rem;
-            color: rgba(52, 152, 219, 0.1);
+            color: rgba(179, 204, 255, 1.0);
             z-index: 0;
         }
 
@@ -478,6 +478,463 @@ body.dark-mode .container {
         });
     </script>
 
+<!-- Employee Performance Scatter Plot -->
+<h3>Employee Performance: Sales vs Fulfillment Time</h3>
+<canvas id="employeePerformanceScatter" width="600" height="400"></canvas>
+<script>
+    const employeePerformanceData = JSON.parse('{{ employee_performance|escapejs }}');
+    const scatterCtx = document.getElementById('employeePerformanceScatter').getContext('2d');
+    
+    const salesData = employeePerformanceData.map(item => item.sales);
+    const fulfillmentData = employeePerformanceData.map(item => item.avg_fulfillment_time);
+    const employeeNumbers = employeePerformanceData.map(item => item.salesRepEmployeeNumber);
+
+    new Chart(scatterCtx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Employee Performance',
+                data: employeePerformanceData.map((item, index) => ({
+                    x: item.sales,
+                    y: item.avg_fulfillment_time,
+                    employeeNumber: item.salesRepEmployeeNumber
+                })),
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                pointRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const dataPoint = context.dataset.data[context.dataIndex];
+                            return `Employee ${dataPoint.employeeNumber}: Sales $${context.parsed.x.toFixed(2)}, Avg Fulfillment Time ${context.parsed.y.toFixed(2)} days`;
+                        }
+                    }
+                },
+                title: { display: true, text: 'Employee Performance: Sales vs Average Fulfillment Time' }
+            },
+            scales: {
+                x: { 
+                    title: { display: true, text: 'Total Sales ($)' },
+                    type: 'linear'
+                },
+                y: { 
+                    title: { display: true, text: 'Average Fulfillment Time (Days)' },
+                    type: 'linear'
+                }
+            }
+        }
+    });
+</script>
+
+<!-- Office Performance Section -->
+    <div class="col-md-12">
+        <h3>Office Sales Performance</h3>
+        <canvas id="officeSalesBarChart" width="500" height="300"></canvas>
+    </div>
+    <div class="col-md-12">
+        <h3>Office Performance Scatter Plot</h3>
+        <canvas id="officePerformanceScatter" width="500" height="300"></canvas>
+    </div>
+
+<!-- Office Performance Table -->
+    <div class="col-12">
+        <h3>Office Performance Details</h3>
+        <table id="officePerformanceTable">
+            <thead>
+                <tr>
+                    <th>City</th>
+                    <th>Total Sales ($)</th>
+                    <th>Avg Fulfillment Time (Days)</th>
+                </tr>
+            </thead>
+            <tbody id="officePerformanceTableBody">
+
+            </tbody>
+        </table>
+    </div>
+
+<script>
+    // Office Sales Bar Chart
+    const officePerformanceData = JSON.parse('{{ office_performance|escapejs }}');
+    
+    // Bar Chart
+    const officeBarCtx = document.getElementById('officeSalesBarChart').getContext('2d');
+    const officeCities = officePerformanceData.map(item => item.city);
+    const officeSales = officePerformanceData.map(item => item.total_sales);
+
+    new Chart(officeBarCtx, {
+        type: 'bar',
+        data: {
+            labels: officeCities,
+            datasets: [{
+                label: 'Total Sales ($)',
+                data: officeSales,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Total Sales ($)' }
+                },
+                x: {
+                    title: { display: true, text: 'Office Location' },
+                }
+            },
+            plugins: {
+                title: { display: true, text: 'Office Sales Performance' }
+            }
+        }
+    });
+
+    // Office Performance Scatter Plot
+    const officeScatterCtx = document.getElementById('officePerformanceScatter').getContext('2d');
+    
+    new Chart(officeScatterCtx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Office Performance',
+                data: officePerformanceData.map(item => ({
+                    x: item.total_sales,
+                    y: item.avg_fulfillment_time,
+                    city: item.city
+                })),
+                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                pointRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const dataPoint = context.dataset.data[context.dataIndex];
+                            return `${dataPoint.city}: Sales $${context.parsed.x.toFixed(2)}, Avg Fulfillment ${context.parsed.y.toFixed(2)} days`;
+                        }
+                    }
+                },
+                title: { display: true, text: 'Office Performance: Sales vs Fulfillment Time' }
+            },
+            scales: {
+                x: { 
+                    title: { display: true, text: 'Total Sales ($)' },
+                    type: 'linear'
+                },
+                y: { 
+                    title: { display: true, text: 'Average Fulfillment Time (Days)' },
+                    type: 'linear'
+                }
+            }
+        }
+    });
+
+    // Populate Office Performance Table
+    const tableBody = document.getElementById('officePerformanceTableBody');
+    officePerformanceData.forEach(office => {
+        const row = `
+            <tr>
+                <td>${office.city}</td>
+                <td>$${office.total_sales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>${office.avg_fulfillment_time.toFixed(2)}</td>
+            </tr>
+        `;
+        tableBody.innerHTML += row;
+    });
+</script>
+
+        <!-- Revenue and Financial Metrics -->
+        
+            <!-- Total Revenue Chart -->
+            <div>
+                <h3>Total Revenue</h3>
+                <canvas id="totalRevenueChart"></canvas>
+            </div>
+
+        <!-- Order and Purchase Metrics -->
+        
+            <!-- Order Sizes Distribution -->
+            <div>
+                <h3>Distribution of Order Sizes</h3>
+                <canvas id="orderSizesChart"></canvas>
+            </div>
+
+            <!-- Customer Purchase Frequency -->
+            <div>
+                <h3>Customer Order Frequency</h3>
+                <canvas id="purchaseFrequencyChart"></canvas>
+            </div>
+
+        <!-- Employee and Performance Metrics -->
+        
+            <!-- Sales Contribution by Employee -->
+            <div>
+                <h3>Sales Contribution by Employee</h3>
+                <canvas id="salesContributionPieChart"></canvas>
+            </div>
+
+        <!-- Payment and Monthly Metrics -->
+        
+            <!-- Payment Distribution -->
+<!--             <div>
+                <h3>Payment Distribution</h3>
+                <canvas id="paymentDistributionChart"></canvas>
+            </div> -->
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/chart.js"></script>
+<script src="https://unpkg.com/@sgratzl/chartjs-chart-boxplot@3.6.0/build/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-histogram"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Utility function for formatting currency
+    function formatCurrency(value) {
+        return `$${Number(value).toLocaleString()}`;
+    }
+
+if (!Chart.controllers) {
+    Chart.register({
+        id: 'horizontalBar',
+        beforeInit: function(chart) {
+            const originalUpdate = chart.update;
+            chart.update = function() {
+                this.options.indexAxis = 'y';
+                return originalUpdate.apply(this, arguments);
+            };
+        }
+    });
+}
+
+    // Total Revenue Chart
+    const totalRevenueCtx = document.getElementById('totalRevenueChart');
+    if (totalRevenueCtx) {
+        new Chart(totalRevenueCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Total Revenue'],
+                datasets: [{
+                    label: 'Revenue',
+                    data: [{{ total_revenue }}],
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        },
+                    title: { display: true, text: 'Total Revenue ($)' },
+                    }
+                }
+            }
+        });
+    }
+
+    // Top Selling Products Chart
+    const topSellingProductsCtx = document.getElementById('topSellingProductsChart');
+    if (topSellingProductsCtx) {
+        const topSellingProductsData = JSON.parse('{{ top_selling_products|escapejs }}');
+        new Chart(topSellingProductsCtx, {
+            type: 'bar',
+            data: {
+                labels: topSellingProductsData.map(item => item.productname),
+                datasets: [{
+                    label: 'Revenue',
+                    data: topSellingProductsData.map(item => item.revenue),
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                }]
+            },
+            options: {
+                indexAxis: 'y', // This makes it a horizontal bar chart
+                responsive: true,
+                scales: {
+                    x: {
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        },
+                        title: { display: true, text: 'Order Size (Quantity)'}
+                    },
+                    y: {
+                        title: { display: true, text: 'Frequency' }
+                    }
+                }
+            }
+        });
+    }
+
+// Order Sizes Distribution (Bar Chart)
+const orderSizesData = JSON.parse('{{ order_sizes|escapejs }}');
+const orderSizesCtx = document.getElementById('orderSizesChart').getContext('2d');
+new Chart(orderSizesCtx, {
+    type: 'bar', // Use bar chart to simulate histogram
+    data: {
+        labels: orderSizesData.map(String), // Convert to string labels
+        datasets: [{
+            label: 'Order Sizes',
+            data: orderSizesData,
+            backgroundColor: 'rgba(255, 206, 86, 0.6)'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: { 
+                display: true, 
+                text: 'Distribution of Order Sizes in Sales Data' 
+            }
+        },
+        scales: {
+            x: {
+                title: { display: true, text: 'Order Size (Quantity)' }
+            },
+            y: {
+                title: { display: true, text: 'Frequency' }
+            }
+        }
+    }
+});
+
+// Customer Order Frequency (Bar Chart)
+const purchaseFrequencyData = JSON.parse('{{ customer_order_count|escapejs }}');
+const purchaseFrequencyCtx = document.getElementById('purchaseFrequencyChart').getContext('2d');
+new Chart(purchaseFrequencyCtx, {
+    type: 'bar', // Use bar chart to simulate histogram
+    data: {
+        labels: purchaseFrequencyData.map(String), // Convert to string labels
+        datasets: [{
+            label: 'Order Frequency',
+            data: purchaseFrequencyData,
+            backgroundColor: 'rgba(153, 102, 255, 0.6)'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: { 
+                display: true, 
+                text: 'Customer Order Frequency Analysis' 
+            }
+        },
+        scales: {
+            x: {
+                title: { display: true, text: 'Number of Orders' }
+            },
+            y: {
+                title: { display: true, text: 'Number of Customers' }
+            }
+        }
+    }
+});
+
+// Sales Contribution by Employee (Pie Chart)
+const salesPieData = JSON.parse('{{ sales_pie_data|escapejs }}');
+const salesContributionCtx = document.getElementById('salesContributionPieChart').getContext('2d');
+new Chart(salesContributionCtx, {
+    type: 'pie',
+    data: {
+        labels: salesPieData.labels,
+        datasets: [{
+            data: salesPieData.values,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.6)',
+                'rgba(54, 162, 235, 0.6)',
+                'rgba(255, 206, 86, 0.6)',
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(153, 102, 255, 0.6)',
+                'rgba(255, 159, 64, 0.6)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: { 
+                display: true, 
+                text: 'Employee Contribution to Total Sales' 
+            }
+        }
+    }
+});
+
+        // Employee Performance Scatter
+        const employeePerformanceData = JSON.parse('{{ employee_performance_scatter|escapejs }}');
+        const employeePerformanceCtx = document.getElementById('employeePerformanceScatterChart').getContext('2d');
+        new Chart(employeePerformanceCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Employee Performance',
+                    data: employeePerformanceData.map(item => ({
+                        x: item.sales,
+                        y: item.avg_fulfillment_time
+                    })),
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { 
+                        title: { display: true, text: 'Sales' },
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    },
+                    y: { 
+                        title: { display: true, text: 'Avg Fulfillment Time (days)' }
+                    }
+                }
+            }
+        });
+
+        // Payment Distribution
+        const paymentData = JSON.parse('{{ top_customers_by_payment|escapejs }}');
+        const paymentDistributionCtx = document.getElementById('paymentDistributionChart').getContext('2d');
+        new Chart(paymentDistributionCtx, {
+            type: 'bar',
+            data: {
+                labels: paymentData.map(item => `Customer ${item.customer_number}`),
+                datasets: [{
+                    label: 'Total Payment',
+                    data: paymentData.map(item => item.total_payment),
+                    backgroundColor: 'rgba(255, 159, 64, 0.6)'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                scales: {
+                    x: {
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+    });
+    </script>
     <!-- Employee Performance Table -->
     <h3>Top 10 Employees by Performance</h3>
     <table border="1">
@@ -492,7 +949,7 @@ body.dark-mode .container {
             {% for employee in employee_performance1 %}
             <tr>
                 <td>{{ employee.salesrepemployeenumber }}</td>
-                <td>{{ employee.sales|floatformat:2 }}</td>
+                <td>{{ employee.sales|floatformat:2|intcomma }}</td>
                 <td>{{ employee.avg_fulfillment_time|floatformat:2 }}</td>
             </tr>
             {% endfor %}
@@ -597,7 +1054,7 @@ body.dark-mode .container {
     </script>
 
     <!-- Heatmap (Can be further styled to fit your needs) -->
-    <h3>Purchase Distribution Heatmap for Customer {{ target_customer }}</h3>
+    <h3>Purchase Distribution for Customer {{ target_customer }}</h3>
     <canvas id="purchaseDistributionHeatmap" width="400" height="200"></canvas>
     <script>
         const heatmapData = JSON.parse('{{ heatmap_data|escapejs }}');

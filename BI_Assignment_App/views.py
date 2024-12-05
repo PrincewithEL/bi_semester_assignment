@@ -26,13 +26,13 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation as LDA
 matplotlib.use("Agg")
 
-try:
-    nltk.download('punkt', quiet=True)
-    nltk.download('stopwords', quiet=True)
-    nltk.download('wordnet', quiet=True)
-    nltk.download('omw-1.4', quiet=True)
-except Exception as e:
-    print(f"NLTK download error: {e}")
+# try:
+#     nltk.download('punkt', quiet=True)
+#     nltk.download('stopwords', quiet=True)
+#     nltk.download('wordnet', quiet=True)
+#     nltk.download('omw-1.4', quiet=True)
+# except Exception as e:
+#     print(f"NLTK download error: {e}")
 
 def load_data(query):
     """Load data using raw SQL query."""
@@ -51,6 +51,7 @@ def business_insights_view(request):
     customers = load_data("SELECT * FROM customers")
     employees = load_data("SELECT * FROM employees")
     products = load_data("SELECT * FROM products")
+    offices = load_data("SELECT * FROM offices")
 
     # Calculate total revenue
     orderdetails['revenue'] = orderdetails['quantityordered'] * orderdetails['priceeach']
@@ -105,7 +106,7 @@ def business_insights_view(request):
     # Fulfillment time metrics
     orders['shippeddate'] = pd.to_datetime(orders['shippeddate'], errors='coerce')
     orders['requireddate'] = pd.to_datetime(orders['requireddate'], errors='coerce')
-    orders['fulfillment_time'] = (orders['shippeddate'] - orders['requireddate']).dt.days
+    orders['fulfillment_time'] = (orders['shippeddate'] - orders['requireddate']).dt.days.abs()
     avg_fulfillment_time = orders['fulfillment_time'].mean()
 
     # Employee performance metrics
@@ -278,109 +279,183 @@ def business_insights_view(request):
         forecast_dates = pd.date_range(start=last_period, periods=12, freq='ME').strftime('%b %Y').tolist()
 
         # Preprocess the comments column
-        comments = orders['comments'].dropna()  # Drop missing comments
-        # Ensure comments is not empty before sampling
-        if not comments.empty:
-            sample_size = min(100, len(comments))  # Take a maximum of 100 comments or less if not available
-            comments = comments.sample(n=sample_size, random_state=42)
-        else:
-            comments = comments  # No sampling if there are no comments
+        # comments = orders['comments'].dropna()  # Drop missing comments
+        
+        # # Ensure NLTK resources are downloaded
+        # try:
+        #     nltk.download('punkt', quiet=True)
+        #     nltk.download('stopwords', quiet=True)
+        #     nltk.download('wordnet', quiet=True)
+        # except Exception as e:
+        #     print(f"NLTK download error: {e}")
 
-        # Ensure NLTK resources are downloaded
-        try:
-            nltk.download('punkt', quiet=True)
-            nltk.download('stopwords', quiet=True)
-            nltk.download('wordnet', quiet=True)
-        except Exception as e:
-            print(f"NLTK download error: {e}")
-
-        def preprocess_text(text):
-            # Handle non-string inputs
-            if not isinstance(text, str):
-                return ''
+        # def preprocess_text(text):
+        #     # Handle non-string inputs
+        #     if not isinstance(text, str):
+        #         return ''
             
-            try:
-                # Ensure NLTK resources are downloaded
-                try:
-                    nltk.download('punkt', quiet=True)
-                    nltk.download('stopwords', quiet=True)
-                    nltk.download('wordnet', quiet=True)
-                    nltk.download('omw-1.4', quiet=True)
-                except Exception as download_error:
-                    print(f"NLTK download error: {download_error}")
+        #     try:
+        #         # Ensure NLTK resources are downloaded
+        #         try:
+        #             nltk.download('punkt', quiet=True)
+        #             nltk.download('stopwords', quiet=True)
+        #             nltk.download('wordnet', quiet=True)
+        #             nltk.download('omw-1.4', quiet=True)
+        #         except Exception as download_error:
+        #             print(f"NLTK download error: {download_error}")
                 
-                # Initialize lemmatizer and stop words
-                lemmatizer = WordNetLemmatizer()
-                stop_words = set(stopwords.words('english'))
+        #         # Initialize lemmatizer and stop words
+        #         lemmatizer = WordNetLemmatizer()
+        #         stop_words = set(stopwords.words('english'))
                 
-                # Lowercase
-                text = text.lower()
+        #         # Lowercase
+        #         text = text.lower()
                 
-                # Remove special characters
-                text = ''.join([char for char in text if char.isalpha() or char.isspace()])
+        #         # Remove special characters
+        #         text = ''.join([char for char in text if char.isalpha() or char.isspace()])
                 
-                # Tokenize
-                words = text.split()
+        #         # Tokenize
+        #         words = text.split()
                 
-                # Lemmatize and remove stopwords with error handling
-                processed_words = []
-                for word in words:
-                    if word not in stop_words:
-                        try:
-                            # Try lemmatization with different POS tags
-                            lemma_attempts = [
-                                lemmatizer.lemmatize(word, pos='n'),  # noun
-                                lemmatizer.lemmatize(word, pos='v'),  # verb
-                                lemmatizer.lemmatize(word, pos='a'),  # adjective
-                                lemmatizer.lemmatize(word)  # default
-                            ]
-                            # Take the first successful lemmatization
-                            lemma = next((l for l in lemma_attempts if l != word), word)
-                            processed_words.append(lemma)
-                        except Exception as lemma_error:
-                            # If lemmatization fails, keep original word
-                            print(f"Lemmatization error for word '{word}': {lemma_error}")
-                            processed_words.append(word)
+        #         # Lemmatize and remove stopwords with error handling
+        #         processed_words = []
+        #         for word in words:
+        #             if word not in stop_words:
+        #                 try:
+        #                     # Try lemmatization with different POS tags
+        #                     lemma_attempts = [
+        #                         lemmatizer.lemmatize(word, pos='n'),  # noun
+        #                         lemmatizer.lemmatize(word, pos='v'),  # verb
+        #                         lemmatizer.lemmatize(word, pos='a'),  # adjective
+        #                         lemmatizer.lemmatize(word)  # default
+        #                     ]
+        #                     # Take the first successful lemmatization
+        #                     lemma = next((l for l in lemma_attempts if l != word), word)
+        #                     processed_words.append(lemma)
+        #                 except Exception as lemma_error:
+        #                     # If lemmatization fails, keep original word
+        #                     print(f"Lemmatization error for word '{word}': {lemma_error}")
+        #                     processed_words.append(word)
                 
-                return ' '.join(processed_words)
+        #         return ' '.join(processed_words)
             
-            except Exception as e:
-                # Fallback for any unexpected errors
-                print(f"Preprocessing error for text '{text}': {e}")
-                return text
+        #     except Exception as e:
+        #         # Fallback for any unexpected errors
+        #         print(f"Preprocessing error for text '{text}': {e}")
+        #         return text
 
-        # Apply preprocessing with error handling
-        try:
-            cleaned_comments = comments.apply(preprocess_text)
-        except Exception as e:
-            print(f"Error in comment preprocessing: {e}")
-            cleaned_comments = comments  # Fallback to original comments if processing fails
+        # # Apply preprocessing with error handling
+        # try:
+        #     cleaned_comments = comments.apply(preprocess_text)
+        # except Exception as e:
+        #     print(f"Error in comment preprocessing: {e}")
+        #     cleaned_comments = comments  # Fallback to original comments if processing fails
 
-        # Vectorize comments
-        # vectorizer = CountVectorizer(max_features=1000)
-        vectorizer = CountVectorizer(max_features=50)
-        X = vectorizer.fit_transform(cleaned_comments)
+        # # Vectorize comments
+        # # vectorizer = CountVectorizer(max_features=1000)
+        # vectorizer = CountVectorizer(max_features=50)
+        # X = vectorizer.fit_transform(cleaned_comments)
 
-        # Perform LDA
-        n_topics = 5
-        lda = LDA(n_components=n_topics, random_state=42)
-        lda.fit(X)
+        # # Perform LDA
+        # n_topics = 5
+        # lda = LDA(n_components=n_topics, random_state=42)
+        # lda.fit(X)
 
-        # Extract topics and top words
-        feature_names = vectorizer.get_feature_names_out()
-        topics = []
-        for topic_idx, topic in enumerate(lda.components_):
-            top_words = [feature_names[i] for i in topic.argsort()[:-11:-1]]  # Top 10 words per topic
-            topics.append({'topic': f"Topic {topic_idx + 1}", 'words': top_words})
+        # # Extract topics and top words
+        # feature_names = vectorizer.get_feature_names_out()
+        # topics = []
+        # for topic_idx, topic in enumerate(lda.components_):
+        #     top_words = [feature_names[i] for i in topic.argsort()[:-11:-1]]  # Top 10 words per topic
+        #     topics.append({'topic': f"Topic {topic_idx + 1}", 'words': top_words})
 
-        # Prepare word cloud data for D3.js
-        word_cloud_data = []
-        for topic_idx, topic in enumerate(lda.components_):
-            word_freq = {feature_names[i]: topic[i] for i in topic.argsort()[:-11:-1]}
-            word_cloud_data.append({'topic': f"Topic {topic_idx + 1}", 'words': word_freq})
+        # # Prepare word cloud data for D3.js
+        # word_cloud_data = []
+        # for topic_idx, topic in enumerate(lda.components_):
+        #     word_freq = {feature_names[i]: topic[i] for i in topic.argsort()[:-11:-1]}
+        #     word_cloud_data.append({'topic': f"Topic {topic_idx + 1}", 'words': word_freq})
 
-        # Prepare topic distribution data for visualization
-        topic_distribution = lda.transform(X).tolist()
+        # # Prepare topic distribution data for visualization
+        # topic_distribution = lda.transform(X).tolist()
+
+        # Explicitly calculate customer-related metrics for visualization
+        revenue_by_customer = orderdetails.merge(orders, on='ordernumber').groupby('customernumber')['revenue'].sum()
+        customer_order_count = orders.groupby('customernumber').size()
+
+        # Ensure revenue is numeric
+        revenue_by_customer = revenue_by_customer.astype(float)
+
+        # Top 10 Customers by Revenue
+        top_customers_by_revenue = revenue_by_customer.nlargest(10)
+        top_customers_by_revenue_data = top_customers_by_revenue.reset_index()
+        top_customers_by_revenue_data.columns = ['customer_number', 'revenue']
+
+        # Top 10 Customers by Order Frequency
+        top_customers_by_orders = customer_order_count.nlargest(10)
+        top_customers_by_orders_data = top_customers_by_orders.reset_index()
+        top_customers_by_orders_data.columns = ['customer_number', 'order_count']
+
+        # Payment-related metrics
+        payments_by_customer = payments.groupby('customernumber')['amount'].sum()
+
+        # Ensure payments are numeric
+        payments_by_customer = payments_by_customer.astype(float)
+
+        # Top 10 Customers by Payment
+        top_customers_by_payment = payments_by_customer.nlargest(10)
+        top_customers_by_payment_data = top_customers_by_payment.reset_index()
+        top_customers_by_payment_data.columns = ['customer_number', 'total_payment']
+
+        # Order sizes
+        order_sizes = orderdetails.groupby('ordernumber')['quantityordered'].sum()
+
+        # Employee Sales Pie Chart Data
+        employee_sales = orders_with_sales_rep.merge(orderdetails, on='ordernumber')['revenue'].groupby(orders_with_sales_rep['salesrepemployeenumber']).sum()
+        employee_sales = employee_sales.astype(float)
+        top_employees_sales = employee_sales.nlargest(5)
+        others_sales = employee_sales.sum() - top_employees_sales.sum()
+        sales_pie_data = pd.concat([top_employees_sales, pd.Series({'Others': others_sales})])
+
+        # Merge orders with customers to get 'salesRepEmployeeNumber'
+        orders_with_sales_rep = orders.merge(customers[['customernumber', 'salesrepemployeenumber']], on='customernumber', how='left')
+
+        # Calculate sales revenue by merging with order details
+        employee_sales_data = orders_with_sales_rep.merge(orderdetails, on='ordernumber')
+        employee_sales_data['revenue'] = employee_sales_data['quantityordered'] * employee_sales_data['priceeach']
+
+        # Aggregate sales by sales representative
+        employee_sales = employee_sales_data.groupby('salesrepemployeenumber')['revenue'].sum()
+
+        # Employee performance metrics
+        # employee_performance = pd.DataFrame({
+        #     'sales': employee_sales,
+        #     'avg_fulfillment_time': orders_with_sales_rep.groupby('salesrepemployeenumber')['fulfillment_time'].mean()
+        # }).sort_values(by='sales', ascending=False)
+
+        # Prepare employee sales pie chart data
+        employee_sales = employee_sales.astype(float)
+        top_employees_sales = employee_sales.nlargest(5)
+        others_sales = employee_sales.sum() - top_employees_sales.sum()
+        sales_pie_data = pd.concat([top_employees_sales, pd.Series({'Others': others_sales})])
+
+        # Merge with employees and offices to get office details
+        orders_with_office = orders_with_sales_rep.merge(
+            employees[['employeenumber', 'officecode']], 
+            left_on='salesrepemployeenumber', 
+            right_on='employeenumber', 
+            how='left'
+        ).merge(
+            offices[['officecode', 'city']], 
+            on='officecode', 
+            how='left'
+        )
+
+        # Calculate office performance
+        office_sales_data = orders_with_office.merge(orderdetails, on='ordernumber')
+        office_sales_data['revenue'] = office_sales_data['quantityordered'] * office_sales_data['priceeach']
+        office_performance = office_sales_data.groupby('city').agg(
+            total_sales=('revenue', 'sum'),
+            avg_fulfillment_time=('fulfillment_time', 'mean')
+        ).sort_values(by='total_sales', ascending=False)
 
     context = {
         "total_revenue": float(total_revenue),
@@ -405,10 +480,27 @@ def business_insights_view(request):
         "forecast_dates": json.dumps(forecast_dates),  # Serialize forecast dates
         "predicted_demand": json.dumps(predicted_demand),  # Serialize predicted demand
         "product_line": product_line,
-        "topics": json.dumps(topics),
-        "word_cloud_data": json.dumps(word_cloud_data),
-        "topic_distribution": json.dumps(topic_distribution),
-        "product_lines": products['productline'].unique()
+        # "topics": json.dumps(topics),
+        # "word_cloud_data": json.dumps(word_cloud_data),
+        # "topic_distribution": json.dumps(topic_distribution),
+        "product_lines": products['productline'].unique(),
+        "top_customers_by_revenue": json.dumps(top_customers_by_revenue_data.to_dict(orient='records')),
+        "top_customers_by_orders": json.dumps(top_customers_by_orders_data.to_dict(orient='records')),
+        "top_customers_by_payment": json.dumps(top_customers_by_payment_data.to_dict(orient='records')),
+        "order_sizes": json.dumps(order_sizes.tolist()),
+        "customer_order_count": json.dumps(customer_order_count.tolist()),
+        "sales_pie_data": json.dumps({
+            'labels': list(sales_pie_data.index),
+            'values': list(sales_pie_data.values)
+        }),
+        'revenue_by_customer': json.dumps(revenue_by_customer.tolist()),
+        "employee_performance_scatter": json.dumps(employee_performance.reset_index().astype({'sales': 'float', 'avg_fulfillment_time': 'float'}).to_dict(orient='records')),
+        "sales_pie_data": json.dumps({
+            'labels': list(sales_pie_data.index),
+            'values': list(sales_pie_data.values)
+        }),
+        "office_performance": json.dumps(office_performance.reset_index().astype({'total_sales': 'float', 'avg_fulfillment_time': 'float'}).to_dict(orient='records')),
+        "fulfillment_time_data": json.dumps(orders['fulfillment_time'].dropna().tolist())
     }
 
     return render(request, "business_insights.html", context)
