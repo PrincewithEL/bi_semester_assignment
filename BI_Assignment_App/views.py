@@ -480,9 +480,9 @@ def business_insights_view(request):
         "forecast_dates": json.dumps(forecast_dates),  # Serialize forecast dates
         "predicted_demand": json.dumps(predicted_demand),  # Serialize predicted demand
         "product_line": product_line,
-        # "topics": json.dumps(topics),
-        # "word_cloud_data": json.dumps(word_cloud_data),
-        # "topic_distribution": json.dumps(topic_distribution),
+        "topics": json.dumps(topics),
+        "word_cloud_data": json.dumps(word_cloud_data),
+        "topic_distribution": json.dumps(topic_distribution),
         "product_lines": products['productline'].unique(),
         "top_customers_by_revenue": json.dumps(top_customers_by_revenue_data.to_dict(orient='records')),
         "top_customers_by_orders": json.dumps(top_customers_by_orders_data.to_dict(orient='records')),

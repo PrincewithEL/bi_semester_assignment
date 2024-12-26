@@ -87,7 +87,7 @@ WSGI_APPLICATION = 'BI_Assignment_Project.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.parse(
-        'postgresql://bi_assignment_user:SV1TmbEuZ596uhE4P3RIJTUXJEJxhY2z@dpg-ct4amnd2ng1s73a42bl0-a.oregon-postgres.render.com/bi_assignment'
+        'postgresql://bi_assignment_5eme_user:yUgnZY2fq79GmHNyBUxwHQ5Q9sTUOlrp@dpg-ctmkratds78s73btu2eg-a.oregon-postgres.render.com/bi_assignment_5eme'
     )
 }
 
